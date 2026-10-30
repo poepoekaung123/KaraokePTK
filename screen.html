@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karaoke Main Player Screen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-screen bg-slate-950 text-white flex flex-col justify-between overflow-hidden">
+<!-- Header Section -->
+<header class="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<i class="fa-solid fa-microphone-lines text-pink-500 text-3xl"></i>
+<div>
+<h1 class="text-xl font-bold text-white">Karaoke HD Player</h1>
+<p id="ipInfo" class="text-xs text-cyan-400">Connecting...</p>
+</div>
+</div>
+<!-- QR Code Display Button / Container -->
+<div class="flex items-center gap-3">
+<div class="bg-white p-1 rounded-lg">
+<div id="qrcode"></div>
+</div>
+<div class="text-left hidden sm:block">
+<p class="text-[10px] text-slate-400">Scan to Remote</p>
+<p class="text-xs font-bold text-pink-500">ဖုန်းဖြင့် Scan ဖတ်ပါ</p>
+</div>
+</div>
+</header>
+<!-- Main Video Screen -->
+<main class="flex-1 flex items-center justify-center relative p-4">
+<div class="w-full h-full max-w-5xl bg-black rounded-2xl overflow-hidden border border-slate-800 relative flex items-center justify-center">
+<video id="videoPlayer" class="w-full h-full object-contain" autoplay></video>
+<!-- Idle Overlay -->
+<div id="idleOverlay" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6">
+<i class="fa-solid fa-compact-disc text-6xl text-pink-500 animate-spin mb-4" style="animation-duration: 6s;"></i>
+<h2 class="text-2xl font-bold text-white mb-2">သီချင်း ရွေးချယ် စောင့်ဆိုင်းနေပါသည်</h2>
+<p class="text-sm text-slate-400">ဖုန်းမှ QR Code ဖတ်ပြီး သီချင်းများ တန်းစီထည့်သွင်းပါ</p>
+</div>
+</div>
+</main>
+<!-- Footer Bar -->
+<footer class="p-4 bg-slate-900 border-t border-slate-800 flex justify-between items-center">
+<div>
+<p class="text-xs text-pink-500 font-bold uppercase">ယခုဖွင့်နေသော သီချင်း</p>
+<h3 id="currentSongTitle" class="text-lg font-bold text-white">မရှိသေးပါ</h3>
+</div>
+<div class="text-right">
+<p class="text-xs text-cyan-400 font-bold uppercase">နောက်တစ်ပုဒ်</p>
+<h4 id="nextSongTitle" class="text-sm font-semibold text-slate-300">မရှိသေးပါ</h4>
+</div>
+</footer>
+<script>
+const socket = io();
+const videoPlayer = document.getElementById('videoPlayer');
+const idleOverlay = document.getElementById('idleOverlay');
+const currentSongTitle = document.getElementById('currentSongTitle');
+const nextSongTitle = document.getElementById('nextSongTitle');
+const remoteUrl = http://${window.location.hostname}:3000/remote.html;
+document.getElementById('ipInfo').innerText = Remote URL: ${remoteUrl};
+// Dynamic QR Code Generation
+new QRCode(document.getElementById("qrcode"), {
+text: remoteUrl,
+width: 48,
+height: 48,
+colorDark : "#000000",
+colorLight : "#ffffff",
+correctLevel : QRCode.CorrectLevel.H
+});
+socket.on('updateQueue', (data) => {
+if (data.currentSong) {
+currentSongTitle.innerText = data.currentSong.title || data.currentSong.path;
+idleOverlay.classList.add('hidden');
+} else {
+currentSongTitle.innerText = "မရှိသေးပါ";
+idleOverlay.classList.remove('hidden');
+}
+if (data.queue && data.queue.length > 0) {
+nextSongTitle.innerText = data.queue[0].title || data.queue[0].path;
+} else {
+nextSongTitle.innerText = "မရှိသေးပါ";
+}
+});
+socket.on('playNext', (song) => {
+if (song) {
+videoPlayer.src = /stream?path=${encodeURIComponent(song.path)};
+videoPlayer.play();
+idleOverlay.classList.add('hidden');
+currentSongTitle.innerText = song.title || song.path;
+} else {
+videoPlayer.pause();
+videoPlayer.src = '';
+idleOverlay.classList.remove('hidden');
+currentSongTitle.innerText = "မရှိသေးပါ";
+}
+});
+videoPlayer.onended = () => {
+socket.emit('nextSong');
+};
+</script>
+</body>
+</html>
