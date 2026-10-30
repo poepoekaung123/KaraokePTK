@@ -14,12 +14,28 @@ uses: actions/checkout@v4
 uses: actions/setup-node@v4
 with:
 node-version: 18
-- name: Build Web App Bundle
+- name: Setup Java JDK
+uses: actions/setup-java@v4
+with:
+distribution: 'zulu'
+java-version: '17'
+- name: Install Dependencies & Capacitor
 run: |
-mkdir -p build
-cp -r www/* build/ || true
-- name: Upload Web Build Package
+npm install
+npm install -g @capacitor/cli
+npm install @capacitor/core @capacitor/android
+- name: Initialize Capacitor & Sync Android
+run: |
+npx cap init KaraokePTK com.karaoke.ptk --web-dir www
+npx cap add android
+npx cap sync android
+- name: Build Android Debug APK
+run: |
+cd android
+chmod +x gradlew
+./gradlew assembleDebug
+- name: Upload APK Artifact
 uses: actions/upload-artifact@v4
 with:
-name: Karaoke-Web-App
-path: build/
+name: Karaoke-App-APK
+path: android/app/build/outputs/apk/debug/app-debug.apk
