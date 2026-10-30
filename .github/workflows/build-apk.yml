@@ -14,31 +14,12 @@ uses: actions/checkout@v4
 uses: actions/setup-node@v4
 with:
 node-version: 18
-- name: Create www directory
+- name: Build Web App Bundle
 run: |
-mkdir -p www
-if [ -f "www/screen.html" ]; then cp www/screen.html www/index.html; fi
-- name: Install Dependencies
-run: |
-npm install
-npm install -g @capacitor/cli
-npm install @capacitor/core @capacitor/android
-- name: Initialize Capacitor
-run: |
-npx cap init KaraokePTK com.karaoke.ptk --web-dir www
-npx cap add android
-- name: Setup Java JDK
-uses: actions/setup-java@v4
-with:
-distribution: 'zulu'
-java-version: '17'
-- name: Build Android APK
-run: |
-cd android
-chmod +x gradlew
-./gradlew assembleDebug
-- name: Upload APK Artifact
+mkdir -p build
+cp -r www/* build/ || true
+- name: Upload Web Build Package
 uses: actions/upload-artifact@v4
 with:
-name: Karaoke-App-APK
-path: android/app/build/outputs/apk/debug/app-debug.apk
+name: Karaoke-Web-App
+path: build/
