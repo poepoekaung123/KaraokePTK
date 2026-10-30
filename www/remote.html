@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karaoke Phone Remote</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-white min-h-screen p-4 max-w-md mx-auto">
+<!-- Header -->
+<header class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-mobile-screen-button text-cyan-400 text-2xl"></i>
+<h1 class="font-bold text-lg">KTV Remote Control</h1>
+</div>
+<span class="text-xs bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-full border border-cyan-800">Connected</span>
+</header>
+<!-- Add Song Form -->
+<div class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-6 space-y-3">
+<h2 class="text-sm font-bold text-slate-200"><i class="fa-solid fa-plus text-pink-500 mr-2"></i> သီချင်းအသစ် ထည့်မည်</h2>
+<div>
+<label class="text-xs text-slate-400 block mb-1">သီချင်း ဖိုင်လမ်းကြောင်း (Path)</label>
+<input type="text" id="songPath" placeholder="ဥပမာ: /Pop/Artist/Song.mp4" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-pink-500">
+</div>
+<div>
+<label class="text-xs text-slate-400 block mb-1">သီချင်း နာမည်</label>
+<input type="text" id="songTitle" placeholder="သီချင်း နာမည် ရေးပါ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-pink-500">
+</div>
+<button onclick="addSong()" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 font-bold py-2.5 rounded-lg text-xs shadow-lg active:scale-95 transition">
+တန်းစီဇယားထဲ ထည့်မည်
+</button>
+</div>
+<!-- Controls -->
+<div class="flex gap-3 mb-6">
+<button onclick="nextSong()" class="flex-1 bg-slate-900 border border-slate-800 hover:border-pink-500 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition">
+<i class="fa-solid fa-forward-step text-pink-500"></i> နောက်တစ်ပုဒ်ကျော်မည်
+</button>
+</div>
+<!-- Queue List -->
+<div class="space-y-3">
+<h2 class="text-sm font-bold text-slate-200"><i class="fa-solid fa-list-ol text-cyan-400 mr-2"></i> တန်းစီထားသော သီချင်းများ</h2>
+<div id="queueList" class="space-y-2"></div>
+</div>
+<script>
+const socket = io();
+function addSong() {
+const pathInput = document.getElementById('songPath');
+const titleInput = document.getElementById('songTitle');
+const path = pathInput.value.trim();
+const title = titleInput.value.trim() || path;
+if (!path) {
+alert('သီချင်း ဖိုင်လမ်းကြောင်း ထည့်ပေးပါရှင်');
+return;
+}
+socket.emit('addSong', { path, title });
+pathInput.value = '';
+titleInput.value = '';
+}
+function nextSong() {
+socket.emit('nextSong');
+}
+socket.on('updateQueue', (data) => {
+const queueList = document.getElementById('queueList');
+queueList.innerHTML = '';
+if (data.queue.length === 0) {
+queueList.innerHTML = <p class="text-xs text-slate-500 text-center py-4">တန်းစီထားသော သီချင်းများ မရှိသေးပါ</p>;
+return;
+}
+data.queue.forEach((song, idx) => {
+const item = document.createElement('div');
+item.className = 'bg-slate-900 border border-slate-800 p-3 rounded-lg flex justify-between items-center';
+item.innerHTML = <div class="truncate"> <p class="text-xs font-bold text-white truncate">${idx + 1}. ${song.title}</p> <p class="text-[10px] text-slate-400 truncate">${song.path}</p> </div>;
+queueList.appendChild(item);
+});
+});
+</script>
+</body>
+</html>
